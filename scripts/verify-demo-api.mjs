@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+import http from 'node:http';
+const base=process.env.DEMO_TEST_ORIGIN||'http://127.0.0.1:5173';
+if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw new Error('This test only runs against a local demo.');
+const results=[];const runId=crypto.randomUUID();
+const user={'oai-authenticated-user-id':'qa-'+runId,'oai-authenticated-user-email':'qa@example.test'};
+const other={'oai-authenticated-user-id':'qa-other-'+runId,'oai-authenticated-user-email':'other@example.test'};
+async function request(method='GET',body,headers=user){return new Promise((resolve,reject)=>{const raw=body?JSON.stringify(body):undefined;const req=http.request(base+'/api/demo',{method,agent:false,headers:{...headers,...(raw?{'Content-Type':'application/json','Content-Length':Buffer.byteLength(raw)}:{})}},res=>{let text='';res.setEncoding('utf8');res.on('data',chunk=>text+=chunk);res.on('end',()=>{try{resolve({status:res.statusCode,data:JSON.parse(text),headers:new Headers(Object.entries(res.headers).map(([k,v])=>[k,String(v)]))})}catch(e){reject(e)}})});req.setTimeout(15000,()=>req.destroy(new Error('API timed out')));req.on('error',reject);req.end(raw);});}
+function pass(name){results.push({name,status:'passed'});console.log('PASS',name);}
+const homepage=await fetch(base);assert.equal(homepage.status,200);await homepage.text();pass('Homepage serves rendered HTML');
+for(const file of ['celebration','cocktails','details']){const asset=await fetch(base+'/images/'+file+'.webp');assert.equal(asset.status,200);await asset.arrayBuffer();}pass('All generated image assets serve');
+let current=await request();assert.equal(current.status,200);assert.equal(current.data.state.posts.length,3);assert.equal(current.headers.get('cache-control'),'private, no-store');pass('Authenticated D1 workspace initializes with seed content');
+const nextDate=new Date(Date.now()+120*86400000).toISOString().slice(0,10);
+const inquiry={name:'QA Demo Host',email:'host@example.test',phone:'',type:'QA private celebration',service:'Planning + bar',date:nextDate,time:'17:00',guests:65,location:'Demo Courtyard',budget:'5000-8000',notes:'Test only, no real booking.'};
+async function action(action,payload,status=200,version=current.data.version){const r=await request('POST',{action,payload,version});assert.equal(r.status,status,JSON.stringify(r.data));if(status===200)current=r;return r;}
+await action('createInquiry',{...inquiry,date:'2020-01-01'},400);await action('createInquiry',{...inquiry,email:'invalid'},400);await action('createInquiry',{...inquiry,guests:-2},400);await action('createInquiry',{...inquiry,name:'<script>alert(1)</script>'},400);pass('Past dates, invalid emails, invalid guest counts and HTML rejected');
+const before=current.data.version;await action('createInquiry',inquiry);const created=current.data.state.inquiries.find(i=>i.name==='QA Demo Host');assert.ok(created?.eventId);assert.ok(current.data.state.events.find(e=>e.id===created.eventId));pass('Booking creates inquiry and linked event atomically');
+await action('createInquiry',inquiry,400);pass('Duplicate sample date and time rejected');
+await action('updateInquiry',{id:created.id,status:'contacted'},409,before);pass('Stale version cannot overwrite current data');
+await action('updateInquiry',{id:created.id,status:'confirmed'});assert.equal(current.data.state.inquiries.find(i=>i.id===created.id).status,'confirmed');pass('Owner inquiry status persists');
+let event=structuredClone(current.data.state.events.find(e=>e.id===created.eventId));event.notes='Verified planning notes';event.tasks.push({id:'qa-task',title:'Choose linens',done:true});event.timeline.push({id:'qa-moment',time:'19:00',title:'Dinner'});event.budgetItems=[{id:'qa-budget',name:'Flowers',estimated:850,actual:700}];event.drinks=['Raspberry spritz','Alcohol-free citrus cooler'];event.guests=72;event.venue='Updated demo venue';
+await action('updateEvent',event);let fresh=await request();assert.deepEqual(fresh.data.state.events.find(e=>e.id===event.id),event);assert.equal(fresh.data.state.inquiries.find(i=>i.id===created.id).guests,72);pass('Planner details, checklist, timeline, budget and menu survive fresh read and sync inquiry');
+const otherState=await request('GET',undefined,other);assert.equal(otherState.status,200);assert.ok(!otherState.data.state.inquiries.some(i=>i.id===created.id));const stolen=await request('POST',{action:'updateEvent',payload:event,version:otherState.data.version},other);assert.equal(stolen.status,400);pass('Different user cannot read or update first user event');
+const origin=await request('POST',{action:'updateInquiry',payload:{id:created.id,status:'new'},version:current.data.version},{...user,origin:'https://unrelated.example'});assert.equal(origin.status,403);pass('Cross-origin mutation rejected');assert.equal((await request()).status,200);pass('Valid request recovers immediately after cross-origin rejection');
+const post={title:'QA planning article',category:'Planning tips',excerpt:'Useful sample article.',body:'The first paragraph is a practical planning note.\n\nThe second paragraph is a considered next step.',image:'/images/details.webp',published:false,readTime:'2 min read'};
+await action('savePost',post);const article=current.data.state.posts.find(p=>p.title===post.title);assert.equal(article.published,false);await action('savePost',{...article,published:true});assert.equal(current.data.state.posts.find(p=>p.id===article.id).published,true);await action('deletePost',{id:article.id});assert.ok(!current.data.state.posts.find(p=>p.id===article.id));pass('Journal draft, publish, update and deletion persist');
+await action('saveHighlight',{title:'QA concept',category:'Private parties',description:'An illustrative celebration concept.',image:'/images/celebration.webp',guests:72});const h=current.data.state.highlights.find(h=>h.title==='QA concept');await action('saveHighlight',{...h,title:'QA concept edited'});await action('deleteHighlight',{id:h.id});assert.ok(!current.data.state.highlights.find(x=>x.id===h.id));pass('Highlights create, edit and delete persist');
+const version=current.data.version;const parallel=await Promise.all([request('POST',{action:'updateInquiry',payload:{id:created.id,status:'contacted'},version}),request('POST',{action:'updateInquiry',payload:{id:created.id,status:'confirmed'},version})]);assert.deepEqual(parallel.map(r=>r.status).sort(),[200,409]);pass('Concurrent writes allow one save and reject the stale one');
+assert.equal((await request('GET',undefined,{})).status,401);assert.equal((await request('POST',{action:'createInquiry',payload:{},version:1},{})).status,401);pass('Anonymous reads and writes rejected');assert.equal((await request()).status,200);pass('Valid request recovers immediately after unauthenticated rejection');
+const report={origin:base,testUser:'isolated synthetic QA user',passed:results.length,results};await writeFile('../../outputs/api-verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify({passed:results.length}));
+
+
+
+
