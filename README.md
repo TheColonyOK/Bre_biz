@@ -10,6 +10,8 @@ A private, interactive concept demo for event planning and mobile bartending. Th
 
 The slideshow supports manual controls, pause and reduced motion. Forms validate inputs, mutations use optimistic version checks, and state is persisted in SQLite. No email, SMS, payment, external calendar or real reservation is triggered.
 
+The sun/moon button on the access page and site header switches between light and dark mode. The initial theme follows the device setting; a manual selection is saved in that browser. The planner's printed report stays light.
+
 ## Railway deployment
 
 This fork runs as a standard Node.js 24 Next.js standalone server. Railway builds the included Dockerfile and starts `node server.js` on `0.0.0.0:$PORT`. `railway.toml` configures one replica, `/api/health`, and bounded restart attempts.

@@ -62,3 +62,66 @@
 @media(max-width:760px){.overview-callout{align-items:flex-start;flex-direction:column}.inquiry-filters{grid-template-columns:1fr}.status-edit{flex-direction:column;align-items:stretch}.content-row .status-pill{margin-left:81px}.content-row strong{font-size:17px}.editor-placeholder{padding:35px 20px}}
 
 .access-page{min-height:100svh;display:grid;place-items:center;padding:32px 20px;background:var(--cream,#f7f1e9)}.access-card{width:min(100%,520px);padding:clamp(30px,7vw,64px);background:#fffdfa;border:1px solid rgba(92,27,43,.12);box-shadow:0 22px 70px rgba(60,23,32,.09)}.access-card .wordmark{display:inline-flex;margin-bottom:54px}.access-card h1{font-family:'Gloock',Georgia,serif;font-size:clamp(42px,8vw,68px);line-height:1.02;color:#4f1928;margin:14px 0 18px}.access-card>p{color:#665b57;line-height:1.7}.access-form{display:grid;gap:12px;margin-top:30px}.access-form label{font-weight:600;font-size:14px}.access-form input{min-height:52px;padding:12px 14px;border:1px solid #c9b9b2;background:white;font:inherit}.access-form .button{justify-content:center;min-height:50px}.access-form>span{font-size:12px;line-height:1.5;color:#786d68;margin-top:8px}.access-error{color:#a1253c;font-size:14px;margin:0}
+
+/* Color-mode control */
+.theme-toggle{display:inline-flex;flex:0 0 44px;align-items:center;justify-content:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;color:var(--wine);background:var(--white);border:1px solid var(--line);border-radius:50%;transition:background-color .18s ease,color .18s ease,border-color .18s ease}.theme-toggle:hover{background:var(--rose)}.theme-toggle:disabled{opacity:1;cursor:wait}.access-brand-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:54px}.access-card .wordmark{display:inline-block;margin-bottom:0}.nav .mobile-plan-link{display:none}
+@media(min-width:761px) and (max-width:1050px){.header-book{display:none}.nav .mobile-plan-link{display:block}.nav{gap:14px}.site-header{gap:16px}}
+@media(max-width:760px){.nav.is-open .mobile-plan-link{display:block}}
+@media(max-width:480px){.header-book{display:none}.site-header>.theme-toggle{margin-left:auto}}
+@media(max-width:380px){.site-header{gap:10px}.site-header>.wordmark{font-size:32px}.mobile-toggle{flex:0 0 40px;width:40px;min-width:40px;height:40px;min-height:40px}.theme-toggle{flex-basis:44px}}
+
+@media screen{
+  html[data-theme="dark"]{
+    color-scheme:dark;
+    --ink:#f3e7df;
+    --wine:#e6a8b6;
+    --wine-dark:#171315;
+    --cream:#171315;
+    --rose:#302229;
+    --olive:#b8c39d;
+    --muted:#bdaeaa;
+    --line:#4d3a41;
+    --white:#211b1e;
+    --control-border:#8b727b;
+  }
+  html[data-theme="dark"] body{background:var(--cream);color:var(--ink)}
+  html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{color:var(--ink);background:var(--white);border-color:var(--control-border);color-scheme:dark}
+  html[data-theme="dark"] input:disabled{background:#302229;color:var(--muted)}
+  html[data-theme="dark"] .button.primary,html[data-theme="dark"] .skip-link{color:#241318}
+  html[data-theme="dark"] .button.primary:hover{background:#d793a3;color:#241318}
+  html[data-theme="dark"] .button.danger{color:#fff}
+  html[data-theme="dark"] .hero h1,html[data-theme="dark"] .section-heading h2,html[data-theme="dark"] .page-intro h1,html[data-theme="dark"] .workspace-header h1{color:var(--ink)}
+  html[data-theme="dark"] .planning-preview,html[data-theme="dark"] .booking-aside{background:#4b1c27;color:var(--ink)}
+  html[data-theme="dark"] .planning-preview .button.light{background:#f3e7df;color:#4b1c27}
+  html[data-theme="dark"] .booking-aside h1,html[data-theme="dark"] .booking-aside h2{color:#f3e7df}
+  html[data-theme="dark"] .system-notice{background:#3f3320;color:#f2d699}
+  html[data-theme="dark"] .footer{background:#211b1e}
+  html[data-theme="dark"] .footer-bottom{border-color:#4d3a41}
+  html[data-theme="dark"] .panel,html[data-theme="dark"] .stat-card,html[data-theme="dark"] .editor-panel,html[data-theme="dark"] .content-row,html[data-theme="dark"] .booking-main,html[data-theme="dark"] .planner-panel,html[data-theme="dark"] .service-option,html[data-theme="dark"] .booking-shell>.success-state,html[data-theme="dark"] .access-card{background:#211b1e;color:#f3e7df}
+  html[data-theme="dark"] .panel,html[data-theme="dark"] .stat-card,html[data-theme="dark"] .editor-panel,html[data-theme="dark"] .content-row,html[data-theme="dark"] .booking-main,html[data-theme="dark"] .planner-panel,html[data-theme="dark"] .service-option,html[data-theme="dark"] .booking-shell>.success-state{border-color:#4d3a41}
+  html[data-theme="dark"] .access-card{border-color:#4d3a41;box-shadow:0 22px 70px #0007}
+  html[data-theme="dark"] .access-card h1{color:#f3e7df}
+  html[data-theme="dark"] .access-card>p,html[data-theme="dark"] .access-form>span{color:#bdaeaa}
+  html[data-theme="dark"] .access-form input{background:#211b1e;border-color:#8b727b;color:#f3e7df}
+  html[data-theme="dark"] .access-error,html[data-theme="dark"] .form-error{background:#40232b;border-color:#74424e;color:#ffb9c5}
+  html[data-theme="dark"] .form-error{color:#ffb9c5}
+  html[data-theme="dark"] th{background:#302229;color:#bdaeaa}
+  html[data-theme="dark"] .budget-summary,html[data-theme="dark"] .menu-reminder{background:#302229}
+  html[data-theme="dark"] .selected-row,html[data-theme="dark"] .content-row.selected,html[data-theme="dark"] .content-list .content-row.active,html[data-theme="dark"] .service-option.selected{background:#302229}
+  html[data-theme="dark"] .content-row.selected,html[data-theme="dark"] .content-list .content-row.active,html[data-theme="dark"] .service-option.selected{border-color:#e6a8b6}
+  html[data-theme="dark"] .status-pill.confirmed,html[data-theme="dark"] .status-pill.published,html[data-theme="dark"] .success-icon,html[data-theme="dark"] .success-state>svg,html[data-theme="dark"] .stepper .complete .step-number{background:#253829;color:#c7ddb1;border-color:#526747}
+  html[data-theme="dark"] .status-pill.declined{background:#302229;color:#bdaeaa}
+  html[data-theme="dark"] .status-pill.contacted,html[data-theme="dark"] .unsaved-confirm{background:#3f3320;color:#f2d699;border-color:#806941}
+  html[data-theme="dark"] .success-icon,html[data-theme="dark"] .success-state>svg{color:#c7ddb1}
+  html[data-theme="dark"] .stepper .active span:first-child,html[data-theme="dark"] .time-slot.selected{color:#241318}
+  html[data-theme="dark"] .save-bar,html[data-theme="dark"] .unsaved-confirm{border-color:#8b727b}
+  html[data-theme="dark"] .fake-check,html[data-theme="dark"] .fake-circle{color:#171315}
+  html[data-theme="dark"] .button.secondary,html[data-theme="dark"] .service-option,html[data-theme="dark"] .stepper span:first-child,html[data-theme="dark"] .time-slot,html[data-theme="dark"] .filter-tabs button,html[data-theme="dark"] .planner-tabs button,html[data-theme="dark"] .save-bar,html[data-theme="dark"] .content-row{border-color:#8b727b}
+  html[data-theme="dark"] .access-page{background:#171315}
+  html[data-theme="dark"] .access-brand-row .theme-toggle{background:#211b1e}
+}
+
+@media print{
+  html{color-scheme:light!important}
+  .theme-toggle{display:none!important}
+}
