@@ -1,5 +1,7 @@
 node_modules
 .next
+.data
+data
 .git
 .wrangler
 .sites-runtime
