@@ -43,3 +43,9 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+/data/
+/.data/
+*.sqlite
+*.sqlite-*
+*.db

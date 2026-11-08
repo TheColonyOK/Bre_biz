@@ -1,41 +1,53 @@
 # Breanna Events & Bar
 
-An interactive concept demo for an event planning and mobile bartending business. The name is provisional; the source brief is Breanna's message describing the two services and a purchased domain.
+A private, interactive concept demo for event planning and mobile bartending. The name is provisional, the event imagery and content are illustrative, and the demo does not create real bookings or send messages.
 
 ## Demo walkthrough
 
-1. **Home**: explore the three-scene animated hero, service paths and sample inspiration. The slideshow has manual controls, pause, and reduced-motion support.
-2. **Booking**: choose a service, future date, sample start time, guests and venue; enter sample contact details; review and create a demo inquiry. A matching event plan is created in the same save.
-3. **My event**: edit overview details; add/check/delete checklist tasks; edit the timeline; track estimated versus actual costs; compose a bar menu. Save explicitly and reload to check persistence. Print generates a full report.
-4. **Owner studio**: search/filter inquiries, change status, open linked plans and export CSV. Edit/publish/unpublish/delete journal entries and manage gallery highlights.
-5. **Journal and highlights**: published content and saved gallery edits appear immediately in the same visitor's website experience.
+1. Open `/demo-access` and enter the owner-provided access code.
+2. Explore the home page, services, sample booking flow, event planner and owner studio.
+3. Add sample inquiries and edit planning, journal and gallery content. Each browser session receives its own isolated workspace.
 
-## Data model and boundaries
+The slideshow supports manual controls, pause and reduced motion. Forms validate inputs, mutations use optimistic version checks, and state is persisted in SQLite. No email, SMS, payment, external calendar or real reservation is triggered.
 
-Cloudflare D1 stores each signed-in visitor's independent demo workspace. Every state mutation is authenticated, validated and version-checked. Booking and linked event creation are atomic. Changes to a linked event's date/location/guests update its inquiry; sample availability conflicts are rejected.
+## Railway deployment
 
-This is a demo, not an operational booking service. No external calendar, email, SMS, payment or real reservation is triggered. Gallery imagery is generated concept photography; sample events, people, venues, editorial and budgets are fictional. The client and owner screens demonstrate roles within one authenticated demo workspace; they are not production staff/client authorization roles. New hosting is owner-private; sharing must be explicitly configured before Breanna can visit.
+This fork runs as a standard Node.js 24 Next.js standalone server. Railway builds the included Dockerfile and starts `node server.js` on `0.0.0.0:$PORT`. `railway.toml` configures one replica, `/api/health`, and bounded restart attempts.
 
-## Local development
+Create a Railway volume mounted at `/data` and configure these service variables:
 
-Node.js 22.13+; tested with Node 24.21.0. Install through the Sites skill's `install-dependencies.mjs`. Use `npm run dev` on loopback. The supplied development sign-in endpoint is `/signin-with-chatgpt?return_to=/`; this local mock never ships in the production build.
+- `DATABASE_PATH=/data/demo.sqlite`
+- `APP_ORIGIN=https://your-exact-public-hostname`
+- `DEMO_ACCESS_CODE=<long private passcode, at least 12 characters>`
+- `DEMO_SESSION_SECRET=<random secret, at least 32 bytes>`
+- `NEXT_TELEMETRY_DISABLED=1`
 
-Checks: `npx tsc --noEmit --pretty false` and `git diff --check`.
+Keep the volume attached to the single replica. SQLite is configured for WAL and a 5 second busy timeout; table creation is idempotent. Changing replicas above one is unsupported because a local SQLite file cannot coordinate across instances. Railway Serverless/App Sleep is a dashboard setting; enable it in the service's Deploy settings if desired. A sleeping service can have a cold-start delay.
 
-Build using `node <sites-plugin-root>/scripts/build-site.mjs`. Generate schema changes with `npm run db:generate`; apply each pending local migration once using Wrangler D1 with `dist/server/wrangler.json` and `.wrangler/state`.
+Do not commit `.env`, secrets, SQLite state, or logs containing access codes. `/api/health` returns only a minimal 200 for platform health checks. The session cookie is HttpOnly, SameSite=Lax, signed with HMAC, unique per browser and expires after seven days. In production it is Secure. OAI identity headers are ignored.
 
-`npm start -- --port 8787` runs the built Worker locally. `scripts/verify-demo-api.mjs` uses synthetic upstream identity headers for the built local Worker only, simulating the identity supplied by Sites. It refuses non-loopback URLs. Do not run it on a hosted production service. The development server intentionally strips spoofed identity headers and uses its local mock sign-in cookie instead.
+## Local development and verification
 
-Do not run two Worker runtimes against one local SQLite state directory simultaneously. Synthetic QA users can use a separate `.wrangler/qa-state` directory.
+Use Node.js 24. Install with `npm ci`, then set local-only environment values in the current shell:
 
-## Hosting
+```powershell
+$env:APP_ORIGIN = 'http://127.0.0.1:8877'
+$env:DEMO_ACCESS_CODE = 'local-test-code-change-me'
+$env:DEMO_SESSION_SECRET = 'local-only-secret-at-least-32-bytes-long'
+$env:DEMO_INSECURE_COOKIES = 'true'
+$env:DATABASE_PATH = '.data/qa.sqlite'
+$env:PORT = '8877'
+npm run dev -- --webpack --port 8877
+```
 
-The Site identity is in `.openai/hosting.json`. Reuse it. Publish via Sites' source helper and private deployment tools. Never put repository tokens in files or command arguments. Never deploy the local SQLite state, credentials or runtime directories.
+`DEMO_INSECURE_COOKIES=true` works only outside production and when `APP_ORIGIN` is loopback. Production always uses Secure cookies. For API verification, set the same `APP_ORIGIN`, `DEMO_ACCESS_CODE` and `DEMO_SESSION_SECRET` in another PowerShell window, then run `node scripts/verify-demo-api.mjs`. The integration script refuses non-loopback origins, performs a real code login, exercises the authenticated API, checks forged/tampered identity rejection and isolates two browser sessions. Its Node client carries the session cookie explicitly, so production Secure-cookie behavior can be tested over local HTTP without weakening that setting. Use a disposable DB path; the test writes synthetic QA content.
 
-## Assets
+`npx tsc --noEmit --pretty false` performs the TypeScript check. `npm run lint` runs ESLint.
 
-Three generated concept photographs are stored locally as optimized WebP. DM Sans and Gloock are stored locally with their Open Font Licenses. No third-party font request is required at runtime.
+## Project identity and assets
+
+`.openai/hosting.json` is retained as project identity metadata only; this fork is deployed through Railway and must not be published through Sites. Generated concept photographs are local optimized WebP. DM Sans and Gloock are local fonts with Open Font Licenses.
 
 ## Production follow-up
 
-Before using for real clients: confirm actual brand/domain/service areas, package scope, approved imagery/copy, operational permissions and business details; define staff/client access roles; connect booking/calendar and notification providers; agree reservation and payment terms; complete production security, accessibility and browser/device acceptance checks. None of these are represented as enabled by the demo.
+Before using for real clients, confirm actual brand/domain/service areas, package scope, approved imagery/copy, operational permissions and business details; define staff/client access roles; connect booking/calendar and notification providers; agree reservation and payment terms; complete production security, accessibility and browser/device acceptance checks. None of those integrations are represented as enabled by this demo.

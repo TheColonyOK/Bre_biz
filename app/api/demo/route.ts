@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { demoStates } from "../../../db/schema";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getDemoUser, originAllowed } from "../../demo-auth";
 import { createDemoSeed } from "../../../lib/demo-seed";
 import type {
   DemoActionRequest,
@@ -349,7 +349,7 @@ function validUserId(value: string): string {
 }
 
 async function authenticate() {
-  const user = await getChatGPTUser();
+  const user = await getDemoUser();
   if (!user) return { response: Response.json({ error: "Authentication required" }, { status: 401 }) };
   try {
     return { userId: validUserId(user.userId) };
@@ -359,14 +359,12 @@ async function authenticate() {
 }
 
 function rejectCrossOrigin(request: Request): Response | null {
-  const origin = request.headers.get("origin");
-  if (!origin) return null;
   try {
-    if (new URL(origin).origin === new URL(request.url).origin) return null;
-  } catch {
-    // Treat malformed Origin values as an origin mismatch.
+    if (originAllowed(request, false)) return null;
+    return Response.json({ error: "Cross-origin requests are not allowed" }, { status: 403 });
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "APP_ORIGIN is not configured correctly." }, { status: 503 });
   }
-  return Response.json({ error: "Cross-origin requests are not allowed" }, { status: 403 });
 }
 
 async function readBoundedBody(
@@ -413,6 +411,7 @@ async function readBoundedBody(
 }
 
 export async function GET() {
+  if (process.env.DEMO_SESSION_SECRET === undefined) return Response.json({ error: "Demo session setup is incomplete" }, { status: 503 });
   const auth = await authenticate();
   if (auth.response) return auth.response;
   try {
